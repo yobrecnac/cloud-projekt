@@ -3,11 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zöldív Építész Stúdió - Felhő</title>
+    <title>Valutaváltó</title>
+    <style>
+        body { font-family: sans-serif; background-color: #f4f4f9; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .container { background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); width: 300px; text-align: center; }
+        h2 { color: #333; margin-top: 0; }
+        input, select, button { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { background-color: #007bff; color: white; border: none; cursor: pointer; }
+        button:hover { background-color: #0056b3; }
+        #result { margin-top: 15px; font-weight: bold; font-size: 1.2em; color: #333; }
+        #status { font-size: 0.8em; color: #666; margin-bottom: 10px; }
+    </style>
 </head>
-<body style="font-family: Arial, sans-serif; text-align: center; margin-top: 50px; background-color: #f4f4f9;">
-    <h1 style="color: #2c3e50;">Üdvözlünk a Zöldív Építész Stúdió megújult weboldalán!!</h1>
-    <p style="color: #7f8c8d; font-size: 1.2em;">Ez a portfólió oldal immár az Azure App Service felhőből, Dockerből fut.</p>
-    <div style="margin-top: 30px; font-weight: bold; color: #27ae60;">Verzió: 1.0 (Automatikus CI/CD frissítéssel)</div>
+<body>
+
+<div class="container">
+    <h2>Valutaváltó</h2>
+    <div id="status">Árfolyamok betöltése...</div>
+
+    <input type="number" id="amount" placeholder="Összeg" min="1">
+    
+    <select id="currency">
+        <option value="EUR">Euró (EUR)</option>
+        <option value="USD">Dollár (USD)</option>
+        <option value="GBP">Font (GBP)</option>
+        <option value="CHF">Svájci Frank (CHF)</option>
+    </select>
+
+    <button onclick="calculate()">Átváltás Forintra</button>
+
+    <div id="result"></div>
+</div>
+
+<script>
+    let rates = {};
+
+    async function fetchRates() {
+        try {
+            const response = await fetch('https://api.frankfurter.app/latest?to=HUF');
+            const data = await response.json();
+            rates = data.rates;
+            document.getElementById('status').innerText = 'Árfolyamok betöltve.';
+        } catch (error) {
+            document.getElementById('status').innerText = 'Hiba a betöltéskor.';
+        }
+    }
+
+    function calculate() {
+        const amount = document.getElementById('amount').value;
+        const currency = document.getElementById('currency').value;
+        
+        if (!amount) return;
+        if (!rates.HUF) return;
+
+        if (currency === 'EUR') {
+            displayResult(amount, currency, rates.HUF);
+        } else {
+            fetch(`https://api.frankfurter.app/latest?to=${currency},HUF`)
+                .then(res => res.json())
+                .then(data => {
+                    const customRate = data.rates.HUF / data.rates[currency];
+                    displayResult(amount, currency, customRate);
+                });
+        }
+    }
+
+    function displayResult(amount, currency, rate) {
+        const resultDiv = document.getElementById('result');
+        const finalHuf = Math.round(amount * rate);
+        resultDiv.innerText = `${amount} ${currency} = ${finalHuf} Ft`;
+    }
+
+    fetchRates();
+</script>
+
 </body>
 </html>
